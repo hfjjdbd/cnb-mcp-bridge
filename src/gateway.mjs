@@ -87,7 +87,7 @@ function createBackend(config) {
       env: config.backend.env,
       stderr: 'ignore'
     });
-    const client = new Client({ name: 'cnb-mcp-gateway', version: '0.1.0' });
+    const client = new Client({ name: 'cnb-mcp-gateway', version: '0.2.0' });
     client.onclose = () => {
       if (state.client === client) state.client = undefined;
     };
@@ -133,7 +133,7 @@ export function createGateway(config, options = {}) {
   const log = options.log ?? ((level, message) => { console.error(`[gateway] ${level}: ${message}`); });
   const sessions = new Map();
   const backend = createBackend(config);
-  const state = { closing: false, sweepTimer: undefined, activeCalls: 0, closingPromise: undefined };
+  const state = { closing: false, sweepTimer: undefined, activeCalls: 0, initializing: 0, closingPromise: undefined };
 
   function emit(level, message) {
     // Never let key material reach a log sink, whatever the sink is.
@@ -159,7 +159,7 @@ export function createGateway(config, options = {}) {
 
   async function createSession() {
     const record = { sessionId: undefined, server: undefined, transport: undefined, lastActivity: Date.now(), streaming: false };
-    const server = new Server({ name: 'cnb-mcp-gateway', version: '0.1.0' }, {
+    const server = new Server({ name: 'cnb-mcp-gateway', version: '0.2.0' }, {
       capabilities: { tools: {} },
       instructions: 'Tools run on one shared local stdio backend process. Other users may share its files and terminals. After a timeout or connection error, inspect state before repeating a mutation; the previous call may already have completed. Do not bulk-delete files or directories.'
     });
@@ -269,16 +269,19 @@ export function createGateway(config, options = {}) {
         sendJson(res, 400, rpcError(null, -32000, 'Session required'));
         return;
       }
-      if (sessions.size >= config.maxSessions) {
+      if (sessions.size + state.initializing >= config.maxSessions) {
         emit('warn', 'rejected initialize: session limit reached');
         sendJson(res, 503, rpcError(null, -32003, 'Too many sessions'));
         return;
       }
-      const record = await createSession();
+      state.initializing++;
+      let record;
       try {
+        record = await createSession();
         await record.transport.handleRequest(req, res, body);
       } finally {
-        if (!record.sessionId) await destroyRecord(record);
+        state.initializing--;
+        if (record && !record.sessionId) await destroyRecord(record);
       }
       return;
     }
@@ -336,6 +339,9 @@ export function createGateway(config, options = {}) {
       sendJson(res, 500, rpcError(null, -32603, 'Internal error'));
     });
   });
+
+  httpServer.headersTimeout = 30000;
+  httpServer.requestTimeout = Math.max(config.callTimeoutMs + 60000, 120000);
 
   async function start() {
     await new Promise((resolve, reject) => {
