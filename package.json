@@ -1,12 +1,24 @@
 {
   "name": "cnb-mcp-bridge",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "description": "Portable stdio bridge for authenticated HTTP MCP tools, with optional CNB workspace discovery",
+  "description": "Portable authenticated MCP bridge and self-hosted stdio-to-HTTP gateway with optional CNB discovery",
   "type": "module",
   "license": "MIT",
-  "engines": { "node": ">=22" },
-  "bin": { "cnb-mcp-bridge": "bin/bridge.mjs" },
-  "scripts": { "start": "node bin/bridge.mjs", "test": "node --test test/*.test.mjs" },
-  "dependencies": { "@modelcontextprotocol/sdk": "1.30.0" }
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "cnb-mcp-bridge": "bin/bridge.mjs",
+    "cnb-mcp-gateway": "bin/server.mjs"
+  },
+  "scripts": {
+    "start": "node bin/bridge.mjs",
+    "gateway": "node bin/server.mjs",
+    "test": "node --test --test-timeout=15000 test/*.test.mjs",
+    "check": "node --check bin/bridge.mjs && node --check bin/server.mjs && node --check src/config.mjs && node --check src/connection.mjs && node --check src/gateway-config.mjs && node --check src/gateway.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.30.0"
+  }
 }
