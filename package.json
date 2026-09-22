@@ -1,0 +1,12 @@
+{
+  "name": "cnb-mcp-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Portable stdio bridge for authenticated HTTP MCP tools, with optional CNB workspace discovery",
+  "type": "module",
+  "license": "MIT",
+  "engines": { "node": ">=22" },
+  "bin": { "cnb-mcp-bridge": "bin/bridge.mjs" },
+  "scripts": { "start": "node bin/bridge.mjs", "test": "node --test test/*.test.mjs" },
+  "dependencies": { "@modelcontextprotocol/sdk": "1.30.0" }
+}

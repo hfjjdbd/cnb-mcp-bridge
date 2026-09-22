@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "remote-tools": {
+      "command": "node",
+      "args": ["/absolute/path/to/cnb-mcp-bridge/bin/bridge.mjs"],
+      "env": {
+        "MCP_ENDPOINT": "https://mcp.example.com/mcp",
+        "MCP_API_KEY_FILE": "/absolute/path/outside/repository/mcp-api-key"
+      }
+    }
+  }
+}
