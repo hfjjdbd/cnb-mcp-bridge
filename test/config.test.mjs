@@ -1,5 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { loadConfig, selectWorkspace, validateEndpoint } from '../src/config.mjs';
 import { resolveEndpoint } from '../src/connection.mjs';
 
@@ -24,5 +27,25 @@ test('CNB selects only the exact configured running repository', () => {
   assert.equal(selectWorkspace({ data: { list: [other, target] } }, target.slug), target);
   for (const list of [[], [other], [target, target], [{ ...target, status: 'closed' }], [{ ...target, business_id: 'bad.example/path' }]]) {
     assert.throws(() => selectWorkspace({ data: { list } }, target.slug));
+  }
+});
+
+test('CNB discovery can read a non-interactive token from CNB_TOKEN_FILE without exposing it', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cnb-token-file-'));
+  try {
+    const tokenFile = path.join(dir, 'token');
+    const cliFile = path.join(dir, 'fake-cnb.mjs');
+    fs.writeFileSync(tokenFile, 'test-cnb-token\n', { mode: 0o600 });
+    fs.writeFileSync(cliFile, `if (process.env.CNB_TOKEN !== 'test-cnb-token') process.exit(7);\nconsole.log(JSON.stringify({data:{list:[{slug:'example/workspace',status:'running',business_id:'example123'}]}}));\n`);
+    const config = loadConfig({
+      CNB_REPOSITORY: 'example/workspace',
+      CNB_CLI_PATH: cliFile,
+      CNB_TOKEN_FILE: tokenFile,
+      MCP_API_KEY: 'test-only-key'
+    });
+    assert.equal((await resolveEndpoint(config)).href, 'https://example123-8000.cnb.run/mcp');
+    assert.throws(() => loadConfig({ ...basic, CNB_TOKEN_FILE: tokenFile }), /only valid with CNB_REPOSITORY/);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
   }
 });
