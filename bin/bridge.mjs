@@ -22,7 +22,7 @@ async function ensureConnection() {
   }).finally(() => { connecting = undefined; });
   return connecting;
 }
-const server = new Server({ name: 'cnb-mcp-bridge', version: '0.1.0' }, {
+const server = new Server({ name: 'cnb-mcp-bridge', version: '0.2.0' }, {
   capabilities: { tools: {} },
   instructions: 'Tools execute on the configured remote MCP server. Other agents may share files and process lists: use your own processes and avoid interrupting others. After a connection error, inspect state before repeating a mutation; the previous call may have executed. Do not bulk-delete files or directories.'
 });
