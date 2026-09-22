@@ -11,6 +11,12 @@
 
 共同第一作者的署名方式由项目发起者指定。Codex 在此明确标记为 AI 助手，不代表 OpenAI 对本项目的官方维护、背书或支持。
 
+## 提交署名 / Commit attribution
+
+Git 提交的作者与共同作者记录具体变更的参与者，不改变上面的共同第一作者约定。Codex 编写的变更可将 Codex 记录为提交作者，并在 hfjjdbd 参与需求或审阅时保留共同作者署名。GitHub 的 Contributors 列表由提交记录生成，不能通过 README 手动指定。
+
+署名使用与 GitHub 账号关联的隐私邮箱，避免公开个人邮箱；只为实际参与的贡献者添加 `Co-authored-by`，不以空提交增加贡献计数。
+
 ## Upstream contributors
 
 感谢以下开源项目及其贡献者。本项目不将这些上游工作的贡献归于自身：
