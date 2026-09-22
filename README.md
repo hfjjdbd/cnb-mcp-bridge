@@ -9,15 +9,19 @@
 ## 两种接入方式
 
 ```text
-支持 HTTP MCP 的 agent ─────────────→ 已部署的远程 MCP 服务
-支持 stdio MCP 的 agent → 本项目脚本 → 已部署的远程 MCP 服务
+远端容器：
+local stdio MCP backend → cnb-mcp-gateway → HTTPS Streamable HTTP MCP
+
+本地客户端：
+支持 HTTP MCP 的 agent ───────────────────────────────→ gateway
+支持 stdio MCP 的 agent → cnb-mcp-bridge → gateway
 ```
 
-- 客户端支持 Streamable HTTP 和认证请求头时，可直接连接远程地址，不必安装本项目。
-- 客户端仅支持 stdio，或需要 CNB 地址发现时，可使用本项目。
-- 本项目目前转发 `tools/list`、`tools/call`，包括工具结果中的文本和其他标准内容块。不转发 resources、prompts、sampling、elicitation 或 MCP tasks。
-- 不保证所有 agent 产品均支持所需协议、请求头或本地进程；需按具体客户端能力配置。
-- 不提供远端部署、容器保活、备份或持久化管理。
+- `bin/server.mjs` / `cnb-mcp-gateway`：把本机 stdio MCP backend（例如 Desktop Commander MCP）通过带独立 API key 的 Streamable HTTP MCP 暴露出去。
+- `bin/bridge.mjs` / `cnb-mcp-bridge`：把远端 Streamable HTTP MCP 转成客户端可消费的 stdio MCP，并可选自动发现 CNB workspace 地址。
+- 两端都只代理 `tools/list`、`tools/call`；不转发 resources、prompts、sampling、elicitation 或 MCP tasks。
+- 目标数据面不依赖 Desktop Commander 的 hosted Remote relay；底层 CNB 网络、客户端 AI 服务和仓库本身仍各自独立。
+- 本项目不负责启动/停止 CNB workspace、备份业务数据或提供多租户沙箱。
 
 ## 安装
 
@@ -31,6 +35,34 @@ npm test
 ```
 
 仓库提供源码，尚未发布 npm 包或 EXE。Windows 使用 `node.exe` 执行脚本；Linux/macOS 使用 `node`。
+
+## 在远端启动自托管 Gateway
+
+远端需要一个可直接以 stdio 运行的 MCP backend。下面只用虚构路径和独立密钥文件示例：
+
+```sh
+install -d -m 700 "$HOME/.local/state/cnb-mcp"
+umask 077
+# 首次部署时自行生成随机密钥并安全传给客户端；不要把密钥写进仓库。
+# printf '%s' '<random-secret>' > "$HOME/.local/state/cnb-mcp/api-key"
+
+GATEWAY_HOST=0.0.0.0 \
+GATEWAY_PORT=8000 \
+GATEWAY_API_KEY_FILE="$HOME/.local/state/cnb-mcp/api-key" \
+GATEWAY_BACKEND_COMMAND=/absolute/path/to/stdio-mcp-server \
+GATEWAY_BACKEND_CWD=/workspace \
+node bin/server.mjs
+```
+
+Gateway 提供 `GET /healthz` 最小健康状态和 `/mcp` Streamable HTTP MCP。默认拒绝带浏览器 `Origin` 的请求；需要浏览器访问时显式设置 `GATEWAY_ALLOWED_ORIGINS`。Session 只保存在内存，并受空闲 TTL / 最大 session 数限制。一个 gateway 共享一个可重建的 stdio backend；工具失败或超时不会自动重放，以避免重复写操作。
+
+完整环境变量和 CLI 参数：
+
+```sh
+node bin/server.mjs --help
+```
+
+在 CNB workspace 中通常监听 `0.0.0.0:8000`，由 CNB 提供外部 HTTPS。不要在公开配置中硬编码具体 workspace business id；客户端可以使用下文的 CNB 自动发现。
 
 ## 通用 stdio 客户端配置
 
@@ -86,7 +118,7 @@ CNB CLI 必须已登录，或收到现有 CNB 认证环境变量。CNB 认证用
 
 ## 测试与限制
 
-`npm test` 在本机启动临时测试服务，验证两个 stdio 客户端并发访问、工具错误传递、认证拒绝、CNB 精确选择和 URL 校验，不需要真实账户或云容器。
+`npm test` 在本机启动临时 HTTP/stdio MCP 服务，验证 gateway 认证、Origin/session 边界、多客户端共享 backend、工具超时不重放、bridge→gateway 以及 CNB 精确选择和 URL 校验；不需要真实账户或云容器。`npm run check` 额外执行 Node 语法检查。
 
 工具调用超时为五分钟。连接失败不会自动重放工具调用，因为远端操作可能已经发生。远端返回的 `isError` 结果会原样转发。
 
