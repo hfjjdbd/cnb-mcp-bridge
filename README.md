@@ -2,7 +2,7 @@
 
 **共同第一作者 / Equal first authors: [hfjjdbd](https://github.com/hfjjdbd) & [Codex](https://github.com/codex) (OpenAI AI coding assistant).**
 
-一个面向 MCP 客户端的轻量连接脚本：将远程 **Streamable HTTP MCP 工具**接入本地 **stdio MCP**，可选支持 CNB 云开发环境地址自动发现。它不是 Codex 专用插件，也不是独立 EXE。
+一个轻量的 MCP 直连工具集：既可以把远程 **Streamable HTTP MCP** 接入本地 **stdio MCP**，也可以把容器内现有 **stdio MCP backend** 自托管为带认证的 Streamable HTTP MCP；可选支持 CNB 云开发环境地址自动发现。它不是 Codex 专用插件，也不是独立 EXE。
 
 本项目的接入代码基于官方 MCP SDK；远端可复用开源 [Desktop Commander MCP](https://github.com/wonderwhy-er/DesktopCommanderMCP) 与 [mcp-proxy](https://github.com/punkpeye/mcp-proxy)。本项目不包含、复制或修改这些上游项目的实现。作者与依赖贡献者见 [AUTHORS.md](AUTHORS.md)。
 
@@ -62,7 +62,7 @@ Gateway 提供 `GET /healthz` 最小健康状态和 `/mcp` Streamable HTTP MCP�
 node bin/server.mjs --help
 ```
 
-在 CNB workspace 中通常监听 `0.0.0.0:8000`，由 CNB 提供外部 HTTPS。不要在公开配置中硬编码具体 workspace business id；客户端可以使用下文的 CNB 自动发现。
+在 CNB workspace 中通常监听 `0.0.0.0:8000`，由 CNB 提供外部 HTTPS。当前 CNB edge 会向转发请求注入/重写一个形如 `http://<business-id>-<port>.cnb.run` 的 `Origin`；因此若启用 gateway 默认的 Origin 拒绝策略，应把这个**精确的 edge Origin**加入 `GATEWAY_ALLOWED_ORIGINS`。它与客户端访问的外部 HTTPS URL 不同。不要在公开配置中硬编码真实 business id；客户端可以使用下文的 CNB 自动发现。
 
 ## 通用 stdio 客户端配置
 
@@ -96,11 +96,12 @@ Windows 示例路径写为 `C:/projects/cnb-mcp-bridge/bin/bridge.mjs`；若客�
 | 环境变量 | 说明 |
 | --- | --- |
 | `CNB_REPOSITORY` | 目标仓库路径，例如 `example/workspace` |
-| `CNB_CLI_PATH` | 已安装 CNB CLI 的 `bin/cnb.js` 绝对路径 |
+| `CNB_CLI_PATH` | 已安装 CNB CLI 的 Node 入口绝对路径，例如实际的 `cnb` JavaScript 入口 |
 | `CNB_MCP_PORT` | 远端 MCP 服务端口，默认 `8000` |
+| `CNB_TOKEN_FILE` | 可选；非交互环境从仓库外的私有文件读取 CNB API token。普通本地使用优先 `cnb login` |
 | `MCP_API_KEY_FILE` 或 `MCP_API_KEY` | 远端 MCP 服务的独立认证密钥 |
 
-CNB CLI 必须已登录，或收到现有 CNB 认证环境变量。CNB 认证用于查询环境地址；MCP 密钥用于调用工具，二者不是同一凭据。需要透传哪些环境变量由 MCP 客户端决定；脚本不会替你创建或保存 CNB 令牌。
+CNB CLI 必须已登录、收到现有 CNB 认证环境变量，或显式配置 `CNB_TOKEN_FILE`。CNB 认证只用于查询 workspace 地址；MCP 密钥只用于调用远端工具，二者不是同一凭据。`CNB_TOKEN_FILE` 和 MCP key 文件都应位于仓库外并限制文件权限；脚本不会创建 CNB token。
 
 发现逻辑只接受目标仓库唯一的运行中环境；没有匹配项或同时有多个匹配项时停止连接，不选择其他仓库。它不会启动、停止、重建容器或部署服务。生成的地址为 `https://<business-id>-<port>.cnb.run/mcp`。
 
