@@ -1,6 +1,6 @@
 # cnb-mcp-bridge
 
-**共同第一作者 / Equal first authors: [hfjjdbd](https://github.com/hfjjdbd) & Codex (OpenAI AI coding assistant).**
+**共同第一作者 / Equal first authors: [hfjjdbd](https://github.com/hfjjdbd) & [Codex](https://github.com/codex) (OpenAI AI coding assistant).**
 
 一个面向 MCP 客户端的轻量连接脚本：将远程 **Streamable HTTP MCP 工具**接入本地 **stdio MCP**，可选支持 CNB 云开发环境地址自动发现。它不是 Codex 专用插件，也不是独立 EXE。
 
