@@ -23,6 +23,7 @@ export function selectWorkspace(payload, repository) {
 export function loadConfig(env = process.env) {
   if (env.MCP_ENDPOINT && env.CNB_REPOSITORY) throw new Error('Choose MCP_ENDPOINT or CNB_REPOSITORY, not both');
   if (!env.MCP_ENDPOINT && !env.CNB_REPOSITORY) throw new Error('Set MCP_ENDPOINT or CNB_REPOSITORY');
+  if (env.CNB_TOKEN_FILE && !env.CNB_REPOSITORY) throw new Error('CNB_TOKEN_FILE is only valid with CNB_REPOSITORY discovery');
   if (env.MCP_API_KEY && env.MCP_API_KEY_FILE) throw new Error('Choose MCP_API_KEY or MCP_API_KEY_FILE, not both');
   let apiKey = env.MCP_API_KEY || '';
   if (env.MCP_API_KEY_FILE) {
@@ -46,6 +47,7 @@ export function loadConfig(env = process.env) {
     endpoint: env.MCP_ENDPOINT ? validateEndpoint(env.MCP_ENDPOINT) : undefined,
     repository: env.CNB_REPOSITORY,
     cliPath: env.CNB_CLI_PATH,
+    cnbTokenFile: env.CNB_TOKEN_FILE,
     port,
     headers: { [header]: apiKey }
   };
