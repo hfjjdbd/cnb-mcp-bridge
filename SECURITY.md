@@ -10,7 +10,7 @@
 - A timeout or disconnection does not prove that a tool failed to execute. Do not automatically replay mutations.
 - The self-hosted gateway must use a dedicated random MCP API key; do not reuse CNB, GitHub, SSH, model registry, or agent-provider credentials.
 - Bind to loopback unless the hosting platform intentionally publishes the selected port. When binding externally, rely on platform HTTPS plus the gateway API key; do not expose the raw stdio backend.
-- Browser `Origin` headers are rejected by default. Add only exact trusted origins when browser-based MCP is intentionally required.
+- Browser `Origin` headers are rejected by default. Add only exact trusted origins when browser-based MCP is intentionally required. Some reverse proxies (including the currently tested CNB workspace edge) inject or rewrite `Origin`; in that deployment, allowlist only the exact proxy-generated workspace origin and keep the independent MCP API key mandatory.
 - The health endpoint is intentionally unauthenticated and should expose only minimal liveness/state counts, never credentials, paths, commands, environment values, or tool output.
 - Backend stderr is not forwarded to clients, and gateway configuration must not pass gateway key variables to the backend process.
 - Stateful sessions are in-memory only. Session loss after a restart is expected; reconnect and inspect state before repeating mutations.
