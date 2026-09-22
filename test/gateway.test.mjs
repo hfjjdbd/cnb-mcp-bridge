@@ -254,3 +254,15 @@ test('a timed-out tool call reaches the backend exactly once and is never replay
     await client.close();
   }
 });
+
+test('concurrent initialize requests respect the max session cap', async t => {
+  const capped = await startGateway(t, { GATEWAY_MAX_SESSIONS: '1' });
+  const responses = await Promise.all([
+    fetch(capped.mcpUrl, { method: 'POST', headers: rpcHeaders(), body: initializeBody(41) }),
+    fetch(capped.mcpUrl, { method: 'POST', headers: rpcHeaders(), body: initializeBody(42) })
+  ]);
+  const statuses = responses.map(response => response.status).sort();
+  assert.deepEqual(statuses, [200, 503]);
+  await Promise.all(responses.map(response => response.text()));
+  assert.equal(capped.gateway.sessionCount(), 1);
+});
