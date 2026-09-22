@@ -115,7 +115,7 @@ CNB CLI 必须已登录、收到现有 CNB 认证环境变量，或显式配置 
 
 连接要求 HTTPS，仅回环地址允许 HTTP 用于本地测试。认证放在请求头中，禁止带凭据、查询参数或片段的 URL，并拒绝 HTTP 重定向。桥接器不打印密钥和 CNB CLI 原始错误输出，但远端工具的正常结果会原样返回：调用敏感文件或环境变量工具仍可能把数据交给 agent。
 
-详见 [SECURITY.md](SECURITY.md)。本仓库的配置与测试使用虚构示例，不包含任何正在运行的实例标识、连接密钥或私人仓库信息。
+本地电脑同时接入一个或多个 CNB workspace 的完整部署、动态地址发现、独立 key、重建恢复与轮换流程见 [docs/LOCAL_AGENT.md](docs/LOCAL_AGENT.md)。贡献与 AI 协助说明见 [CONTRIBUTORS.md](CONTRIBUTORS.md) 与 [AUTHORS.md](AUTHORS.md)。\n\n详见 [SECURITY.md](SECURITY.md)。本仓库的配置与测试使用虚构示例，不包含任何正在运行的实例标识、连接密钥或私人仓库信息。
 
 ## 测试与限制
 
