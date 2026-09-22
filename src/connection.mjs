@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
@@ -11,6 +12,13 @@ export async function resolveEndpoint(config) {
   const env = { ...process.env };
   delete env.MCP_API_KEY;
   delete env.MCP_API_KEY_FILE;
+  if (config.cnbTokenFile) {
+    let token;
+    try { token = fs.readFileSync(config.cnbTokenFile, 'utf8').trim(); }
+    catch { throw new Error('CNB workspace discovery failed; cannot read CNB_TOKEN_FILE'); }
+    if (!token || /[\r\n]/.test(token)) throw new Error('CNB workspace discovery failed; CNB_TOKEN_FILE is empty or invalid');
+    env.CNB_TOKEN = token;
+  }
   let payload;
   try {
     const { stdout } = await exec(process.execPath, [config.cliPath,
@@ -27,7 +35,7 @@ export async function resolveEndpoint(config) {
 
 export async function connect(config) {
   const endpoint = await resolveEndpoint(config);
-  const client = new Client({ name: 'cnb-mcp-bridge', version: '0.1.0' });
+  const client = new Client({ name: 'cnb-mcp-bridge', version: '0.2.0' });
   const transport = new StreamableHTTPClientTransport(endpoint, {
     requestInit: { headers: config.headers },
     // Never forward the connection key through a redirect to another origin.
